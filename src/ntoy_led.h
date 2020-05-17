@@ -1,6 +1,9 @@
 #ifndef __NTOY_LED_H__
 #define __NTOY_LED_H__
 
+#include <glib.h>
+#include <gio/gio.h>
+
 #define NTOY_NUM_LEDS 3
 #define NTOY_LED_MIN_BRIGHTNESS 0
 #define NTOY_LED_MAX_BRIGHTNESS 31
@@ -15,5 +18,7 @@ void ntoy_led_clear(void);
 int ntoy_led_update(int fd);
 int ntoy_led_open(void);
 int ntoy_led_close(int fd);
+
+int ntoy_led_dbus_init(GDBusConnection *conn);
 
 #endif
