@@ -3,7 +3,7 @@
 
 #include <time.h>
 
-typedef void (*GpioEventCallback)(unsigned char value, time_t stamp);
+typedef void (*GpioEventCallback)(unsigned char value, struct timespec *ts);
 
 int ntoy_setup_gpio(unsigned int pin, const char *dir, const char *edge);
 

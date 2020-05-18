@@ -5,6 +5,7 @@
 #include <gio/gio.h>
 
 #include "ntoy_led.h"
+#include "ntoy_button.h"
 
 static void _bus_acquired(GDBusConnection *conn, const gchar *name,
 			  gpointer user_data)
@@ -12,6 +13,7 @@ static void _bus_acquired(GDBusConnection *conn, const gchar *name,
 	printf("dbus bus acquired\n");
 
 	ntoy_led_dbus_init(conn);
+	ntoy_button_dbus_init(conn);
 }
 
 static void _name_acquired(GDBusConnection *connection, const gchar *name,

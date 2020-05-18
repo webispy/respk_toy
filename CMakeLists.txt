@@ -33,6 +33,7 @@ ADD_EXECUTABLE(ntoy
 	src/ntoy_spi.c
 	src/ntoy_gpio.c
 	src/ntoy_led.c
+	src/ntoy_button.c
 	src/main.c)
 
 ADD_DEFINITIONS(

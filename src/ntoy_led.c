@@ -170,7 +170,7 @@ int ntoy_led_close(int fd)
 	return 0;
 }
 
-#define DBUS_OBJECT_PATH "/"
+#define DBUS_OBJECT_PATH "/LED"
 #define DBUS_INTERFACE_NAME NTOY_DBUS_SERVICE ".LED"
 #define DBUS_INTROSPECTION                                                     \
 	"<node>"                                                               \
@@ -281,9 +281,9 @@ static int _register_dbus_path(int led_id, GDBusConnection *conn)
 	}
 
 	if (led_id == 0)
-		snprintf(buf, sizeof(buf), "/LED");
+		snprintf(buf, sizeof(buf), DBUS_OBJECT_PATH);
 	else
-		snprintf(buf, sizeof(buf), "/LED/%d", led_id - 1);
+		snprintf(buf, sizeof(buf), DBUS_OBJECT_PATH "/%d", led_id - 1);
 
 	return g_dbus_connection_register_object(conn, buf,
 						 intro->interfaces[0], &ops,
