@@ -1,0 +1,10 @@
+[Unit]
+Description=NToy Device Control Service
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ntoy
+
+[Install]
+WantedBy=multi-user.target
