@@ -29,21 +29,27 @@ ADD_COMPILE_OPTIONS(
 	-Wno-missing-field-initializers
 	-Wno-unused-parameter)
 
-ADD_EXECUTABLE(ntoy
-	src/ntoy_spi.c
-	src/ntoy_gpio.c
-	src/ntoy_led.c
-	src/ntoy_button.c
-	src/main.c)
-
 ADD_DEFINITIONS(
 	# Run-time buffer overflow detection
 	-D_FORTIFY_SOURCE=2
 	-DNTOY_DBUS_SERVICE="${NTOY_DBUS_SERVICE}"
 )
 
+ADD_EXECUTABLE(ntoy
+	src/ntoy_spi.c
+	src/ntoy_gpio.c
+	src/ntoy_led.c
+	src/ntoy_button.c
+	src/main.c)
 TARGET_LINK_LIBRARIES(ntoy PUBLIC ${pkgs_LDFLAGS})
 INSTALL(TARGETS ntoy RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+ADD_EXECUTABLE(led_effect
+	src/ntoy_spi.c
+	src/ntoy_led.c
+	src/led_effect.c)
+TARGET_LINK_LIBRARIES(led_effect PUBLIC ${pkgs_LDFLAGS})
+INSTALL(TARGETS led_effect RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # DBus configuration file
 CONFIGURE_FILE(ntoy.conf.in ${CMAKE_BINARY_DIR}/ntoy.conf @ONLY)

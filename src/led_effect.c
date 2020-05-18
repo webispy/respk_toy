@@ -19,7 +19,7 @@ static void br_loop(int fd, int min_br, int max_br, int step)
 }
 
 static void rotate_loop(int fd, int count, unsigned int r, unsigned int g,
-		 unsigned int b, unsigned int br)
+			unsigned int b, unsigned int br)
 {
 	int i;
 	int num = 0;
@@ -42,26 +42,42 @@ static void rotate_loop(int fd, int count, unsigned int r, unsigned int g,
 	}
 }
 
-int main(int argc, char *argv[])
+static void gradient_loop(int fd)
 {
-	int fd;
+	int r, g, b;
+	double value;
+	double i;
 
-	printf("Start\n");
+	printf("\nGradient loop\n");
 
-	fd = ntoy_led_open();
-	if (fd < 0) {
-		printf("fail\n");
-		return -1;
+	for (i = 0.0; i <= 1.0; i += 0.01) {
+		if (i > 0.5) {
+			value = i - 0.5;
+			r = 0;
+			g = (int)((1 - 2 * value) * 255);
+			b = (int)(2 * value * 255);
+		} else if (i <= 0.5) {
+			value = i;
+			r = (int)((1 - 2 * value) * 255);
+			g = (int)(2 * value * 255);
+			b = 0;
+		}
+
+		printf("seq=%f, r=%d, g=%d, b=%d\n", i, r, g, b);
+
+		ntoy_led_set_r_g_b(0, r, g, b);
+		ntoy_led_set_r_g_b(1, r, g, b);
+		ntoy_led_set_r_g_b(2, r, g, b);
+
+		ntoy_led_update(fd);
+
+		usleep(50 * 1000);
 	}
+}
 
-#if 0
-	printf("Clear\n");
-	ntoy_led_set_brightness(0, NTOY_LED_MAX_BRIGHTNESS);
-	ntoy_led_set_brightness(1, NTOY_LED_MAX_BRIGHTNESS);
-	ntoy_led_set_brightness(2, NTOY_LED_MAX_BRIGHTNESS);
-	ntoy_led_clear();
-	ntoy_led_update(fd);
-	sleep(1);
+static void simple_test(int fd)
+{
+	printf("\nSimple test\n");
 
 	printf("\nLED-1 Red\n");
 	ntoy_led_clear();
@@ -80,9 +96,11 @@ int main(int argc, char *argv[])
 	ntoy_led_set_rgb(2, 0x0000FF);
 	ntoy_led_update(fd);
 	sleep(1);
+}
 
-#else
-	printf("\nLED sequence\n");
+static void simple_sequence(int fd)
+{
+	printf("\nSimple LED sequence\n");
 	rotate_loop(fd, 20, 0, 0, 255, NTOY_LED_MAX_BRIGHTNESS);
 
 	printf("\nWHITE brightness loop\n");
@@ -116,7 +134,35 @@ int main(int argc, char *argv[])
 
 	br_loop(fd, 0, NTOY_LED_MAX_BRIGHTNESS, 1);
 	br_loop(fd, NTOY_LED_MAX_BRIGHTNESS, NTOY_LED_MIN_BRIGHTNESS - 1, -1);
-#endif
+}
+
+int main(int argc, char *argv[])
+{
+	int fd;
+
+	printf("Start\n");
+
+	fd = ntoy_led_open();
+	if (fd < 0) {
+		printf("fail\n");
+		return -1;
+	}
+
+	if (argc == 2) {
+		printf("Clear\n");
+		ntoy_led_set_brightness(0, NTOY_LED_MAX_BRIGHTNESS);
+		ntoy_led_set_brightness(1, NTOY_LED_MAX_BRIGHTNESS);
+		ntoy_led_set_brightness(2, NTOY_LED_MAX_BRIGHTNESS);
+		ntoy_led_clear();
+		ntoy_led_update(fd);
+
+		if (argv[1][0] == '0')
+			simple_test(fd);
+		else if (argv[1][0] == '1')
+			simple_sequence(fd);
+		else if (argv[1][0] == '2')
+			gradient_loop(fd);
+	}
 
 	printf("\nClose with clear\n");
 	ntoy_led_reset();
