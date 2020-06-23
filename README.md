@@ -12,10 +12,13 @@
 ## Install
 
 1. Copy the files in the OUTPUT directory to your Raspberry pi
+
 2. Enable ntoy systmed service
 
-    systemctl enable ntoy
-    systemctl start ntoy
+```sh
+systemctl enable ntoy    
+systemctl start ntoy
+```
 
 ## Usage
 
