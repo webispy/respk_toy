@@ -58,3 +58,38 @@ You can also control each led using the object path(0 ~ 2):
 
     mdbus -sl n.toy
 
+One click events:
+
+    [SIGNAL] n.toy.Button.Pressed  /Button  :1.8
+    ()
+    [SIGNAL] n.toy.Button.Clicked  /Button  :1.8
+    ()
+    [SIGNAL] n.toy.Button.Released  /Button  :1.8
+    ()
+
+Double click and release events:
+
+    [SIGNAL] n.toy.Button.Pressed  /Button  :1.8
+    ()
+    [SIGNAL] n.toy.Button.Clicked  /Button  :1.8
+    ()
+    [SIGNAL] n.toy.Button.Released  /Button  :1.8
+    ()
+    [SIGNAL] n.toy.Button.Pressed  /Button  :1.8
+    ()
+    [SIGNAL] n.toy.Button.DoubleClicked  /Button  :1.8
+    ()
+    [SIGNAL] n.toy.Button.Released  /Button  :1.8
+    ()
+
+Long-press and release events:
+
+    [SIGNAL] n.toy.Button.Pressed  /Button  :1.8
+    ()
+    [SIGNAL] n.toy.Button.LongPress  /Button  :1.8
+    ()
+    [SIGNAL] n.toy.Button.Clicked  /Button  :1.8
+    ()
+    [SIGNAL] n.toy.Button.Released  /Button  :1.8
+    ()
+
