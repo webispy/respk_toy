@@ -7,18 +7,32 @@
 
 ## Build
 
+Build from HOST PC(x86) using crosscompile docker image
+
     docker run -it --rm -v $PWD:$PWD -w $PWD nugulinux/devenv:rpi_buster ./build.sh
 
 ## Install
+
+### ReSpeaker
+
+https://github.com/respeaker/seeed-voicecard
+
+    git clone https://github.com/respeaker/seeed-voicecard
+    cd seeed-voicecard
+    sudo ./install.sh
+    sudo reboot
+
+### Toy daemon
 
 1. Copy the files in the OUTPUT directory to your Raspberry pi
 
 2. Enable ntoy systmed service
 
 ```sh
-systemctl enable ntoy    
+systemctl enable ntoy
 systemctl start ntoy
 ```
+
 
 ## Usage
 
@@ -43,3 +57,4 @@ You can also control each led using the object path(0 ~ 2):
 ### Button event monitoring
 
     mdbus -sl n.toy
+
