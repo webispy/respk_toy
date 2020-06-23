@@ -80,6 +80,9 @@ int ntoy_led_set_brightness(int num, int value)
 	if (num < 0 || num >= NTOY_NUM_LEDS)
 		return -1;
 
+	if (value > NTOY_LED_MAX_BRIGHTNESS)
+		value = NTOY_LED_MAX_BRIGHTNESS;
+
 	*(first_led + num * 4) = LED_START | value;
 
 	return 0;

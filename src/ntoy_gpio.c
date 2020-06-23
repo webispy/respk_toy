@@ -58,13 +58,10 @@ static int gpio_export(unsigned int gpio)
 	struct stat statbuf;
 
 	snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%d", gpio);
-	if (stat(buf, &statbuf) < 0) {
-		fprintf(stderr, "stat %s failed: %s\n", buf, strerror(errno));
-		return -1;
+	if (stat(buf, &statbuf) == 0) {
+		if ((statbuf.st_mode & S_IFMT) == S_IFDIR)
+			return 0;
 	}
-
-	if ((statbuf.st_mode & S_IFMT) == S_IFDIR)
-		return 0;
 
 	fd = open("/sys/class/gpio/export", O_WRONLY);
 	if (fd < 0) {
