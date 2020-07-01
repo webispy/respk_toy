@@ -42,6 +42,8 @@
 static unsigned char led_buf[NTOY_NUM_LEDS * 4 + 8];
 static unsigned char *first_led = led_buf + 4;
 
+static int _channel = -1;
+
 static void dump_led_buf(void)
 {
 	size_t i;
@@ -141,17 +143,17 @@ void ntoy_led_clear(void)
 	}
 }
 
-int ntoy_led_update(int fd)
+int ntoy_led_update(void)
 {
-	if (fd < 0)
+	if (_channel < 0)
 		return -1;
 
 	dump_led_buf();
 
-	return ntoy_spi_write(fd, led_buf, sizeof(led_buf));
+	return ntoy_spi_write(_channel, led_buf, sizeof(led_buf));
 }
 
-int ntoy_led_open(void)
+int ntoy_led_open(int channel)
 {
 	ntoy_led_reset();
 
@@ -160,15 +162,23 @@ int ntoy_led_open(void)
 	 * Device: 1
 	 * Speed: 8000000 Hz
 	 */
-	return ntoy_spi_open(0, 1, 0x00, 0, 8000000);
-}
-
-int ntoy_led_close(int fd)
-{
-	if (fd < 0)
+	if (ntoy_spi_open(channel, 0x00, 0, 8000000) < 0)
 		return -1;
 
-	close(fd);
+	_channel = channel;
+
+	return 0;
+}
+
+int ntoy_led_close(void)
+{
+	if (_channel < 0)
+		return -1;
+
+	if (ntoy_spi_close(_channel) < 0)
+		return -1;
+
+	_channel = -1;
 
 	return 0;
 }
@@ -192,8 +202,6 @@ int ntoy_led_close(int fd)
 	"    </method>"                                                        \
 	"  </interface>"                                                       \
 	"</node>"
-
-static int _led_fd;
 
 static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 			      const gchar *object_path,
@@ -220,7 +228,7 @@ static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 			ntoy_led_set_r_g_b(led_id - 1, r, g, b);
 		}
 
-		ntoy_led_update(_led_fd);
+		ntoy_led_update();
 	} else if (!g_strcmp0(method_name, "Brightness")) {
 		unsigned char value;
 
@@ -235,7 +243,7 @@ static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 			ntoy_led_set_brightness(led_id - 1, value);
 		}
 
-		ntoy_led_update(_led_fd);
+		ntoy_led_update();
 	} else if (!g_strcmp0(method_name, "Off")) {
 		if (led_id == 0) {
 			ntoy_led_set_brightness(0, 0);
@@ -245,7 +253,7 @@ static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 			ntoy_led_set_brightness(led_id - 1, 0);
 		}
 
-		ntoy_led_update(_led_fd);
+		ntoy_led_update();
 	} else if (!g_strcmp0(method_name, "On")) {
 		if (led_id == 0) {
 			ntoy_led_set_brightness(0, NTOY_LED_MAX_BRIGHTNESS);
@@ -256,7 +264,7 @@ static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 						NTOY_LED_MAX_BRIGHTNESS);
 		}
 
-		ntoy_led_update(_led_fd);
+		ntoy_led_update();
 	}
 
 	g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
@@ -296,8 +304,7 @@ static int _register_dbus_path(int led_id, GDBusConnection *conn)
 
 int ntoy_led_dbus_init(GDBusConnection *conn)
 {
-	_led_fd = ntoy_led_open();
-	if (_led_fd < 0)
+	if (ntoy_led_open(1) < 0)
 		return -1;
 
 	/* All LEDs */

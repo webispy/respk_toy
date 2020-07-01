@@ -143,6 +143,21 @@ int ntoy_setup_gpio(unsigned int pin, const char *dir, const char *edge)
 	return 0;
 }
 
+int ntoy_open_gpio(unsigned int pin)
+{
+	int fd;
+	char buf[255];
+	snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%d/value", pin);
+
+	fd = open(buf, O_RDWR);
+	if (fd < 0) {
+		fprintf(stderr, "value: write failed: %s\n", strerror(errno));
+		return -1;
+	}
+
+	return fd;
+}
+
 int ntoy_add_gpio_handler(unsigned int pin, GpioEventCallback func)
 {
 	int fd;

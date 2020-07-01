@@ -15,9 +15,9 @@ int ntoy_led_set_rgb(int num, unsigned int hex);
 void ntoy_led_reset(void);
 void ntoy_led_clear(void);
 
-int ntoy_led_update(int fd);
-int ntoy_led_open(void);
-int ntoy_led_close(int fd);
+int ntoy_led_update(void);
+int ntoy_led_open(int channel);
+int ntoy_led_close(void);
 
 int ntoy_led_dbus_init(GDBusConnection *conn);
 

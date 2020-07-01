@@ -2,8 +2,9 @@
 
 ## Features
 
-* RGB LED Control (3 REG LEDs on the ReSpeaker board)
+* RGB LED Control (3 REG LEDs on the ReSpeaker board, SPI CE1)
 * Button Control (Pressed, Released, Clicked, DoubleClicked and LongPress event)
+* Dot-matrix 32x8 Control (MAX7219, SPI CE0)
 
 ## Build
 
@@ -92,4 +93,15 @@ Long-press and release events:
     ()
     [SIGNAL] n.toy.Button.Released  /Button  :1.8
     ()
+
+### Dot-matrix control
+
+Clear
+
+    mdbus -s n.toy /Matrix n.toy.Matrix.Clear
+
+Turn on/off the pixel (row, col, 1 or true = On / 0 or false = Off)
+
+    mdbus -s n.toy /Matrix n.toy.Matrix.SetPixel 4 15 1
+    mdbus -s n.toy /Matrix n.toy.Matrix.SetPixel 4 15 0
 

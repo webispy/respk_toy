@@ -40,6 +40,7 @@ ADD_EXECUTABLE(ntoy
 	src/ntoy_gpio.c
 	src/ntoy_led.c
 	src/ntoy_button.c
+	src/ntoy_matrix.c
 	src/main.c)
 TARGET_LINK_LIBRARIES(ntoy PUBLIC ${pkgs_LDFLAGS})
 INSTALL(TARGETS ntoy RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -50,6 +51,14 @@ ADD_EXECUTABLE(led_effect
 	src/led_effect.c)
 TARGET_LINK_LIBRARIES(led_effect PUBLIC ${pkgs_LDFLAGS})
 INSTALL(TARGETS led_effect RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+ADD_EXECUTABLE(matrix_test
+	src/ntoy_spi.c
+	src/ntoy_matrix.c
+	src/ntoy_gpio.c
+	src/matrix_test.c)
+TARGET_LINK_LIBRARIES(matrix_test PUBLIC ${pkgs_LDFLAGS})
+INSTALL(TARGETS matrix_test RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # DBus configuration file
 CONFIGURE_FILE(ntoy.conf.in ${CMAKE_BINARY_DIR}/ntoy.conf @ONLY)
