@@ -286,6 +286,11 @@ int ntoy_matrix_draw_open(void)
 	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
 	cairo_set_line_width(cr, 1.0);
 
+	/* font */
+	cairo_select_font_face(cr, "Terminus", CAIRO_FONT_SLANT_NORMAL,
+			       CAIRO_FONT_WEIGHT_NORMAL);
+	cairo_set_font_size(cr, 12);
+
 	return 0;
 }
 
@@ -326,6 +331,22 @@ int ntoy_matrix_draw_close(void)
 
 	cr = NULL;
 	surface = NULL;
+
+	return 0;
+}
+
+int ntoy_matrix_draw_text(int y, int x, const char *text, int value)
+{
+	if (cr == NULL)
+		return -1;
+
+	if (value == 0)
+		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.0);
+	else
+		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
+
+	cairo_move_to(cr, x,y);
+	cairo_show_text(cr, text);
 
 	return 0;
 }

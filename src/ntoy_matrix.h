@@ -26,7 +26,9 @@ void ntoy_matrix_clear(void);
 int ntoy_matrix_draw_open(void);
 int ntoy_matrix_draw_flush(void);
 int ntoy_matrix_draw_close(void);
+
 int ntoy_matrix_draw_line(int y, int x, int h, int w, int value);
+int ntoy_matrix_draw_text(int y, int x, const char *text, int value);
 
 int ntoy_matrix_dbus_init(GDBusConnection *conn);
 

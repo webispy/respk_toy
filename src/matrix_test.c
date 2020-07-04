@@ -188,13 +188,22 @@ static void simple_xy_loop(void)
 static void simple_cairo(void)
 {
 	int i;
-	int count;
+	int count = 0;
+	char buf[10] = "0";
+
 	ntoy_matrix_clear();
 
 	ntoy_matrix_draw_open();
 
-	for (count = 0; count < 1000; count++) {
+
+	for (; count < 1000; count++) {
+		ntoy_matrix_draw_text(8, 5, buf, 0);
+
+		snprintf(buf, 5, "%04d", count);
+
+
 		for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
+			ntoy_matrix_draw_text(8, 5, buf, 1);
 			ntoy_matrix_draw_line(0, 0, i, NTOY_MATRIX_NUM_COLS - 1,
 					      1);
 			ntoy_matrix_draw_line(0, NTOY_MATRIX_NUM_COLS - 1, i, 0,
@@ -203,7 +212,7 @@ static void simple_cairo(void)
 			ntoy_matrix_draw_flush();
 			ntoy_matrix_update();
 
-			usleep(100 * 1000);
+			usleep(50 * 1000);
 
 			ntoy_matrix_draw_line(0, 0, i, NTOY_MATRIX_NUM_COLS - 1,
 					      0);
@@ -212,6 +221,7 @@ static void simple_cairo(void)
 		}
 
 		for (i = 0; i < NTOY_MATRIX_NUM_COLS; i++) {
+			ntoy_matrix_draw_text(8, 5, buf, 1);
 			ntoy_matrix_draw_line(0, 0, NTOY_MATRIX_NUM_ROWS - 1,
 					      NTOY_MATRIX_NUM_COLS - i - 1, 1);
 
@@ -221,7 +231,7 @@ static void simple_cairo(void)
 			ntoy_matrix_draw_flush();
 			ntoy_matrix_update();
 
-			usleep(100 * 1000);
+			usleep(50 * 1000);
 
 			ntoy_matrix_draw_line(0, 0, NTOY_MATRIX_NUM_ROWS - 1,
 					      NTOY_MATRIX_NUM_COLS - i - 1, 0);
@@ -232,6 +242,9 @@ static void simple_cairo(void)
 	}
 
 	ntoy_matrix_draw_close();
+	ntoy_matrix_update();
+
+	sleep(100);
 }
 
 static void next_key(void)
