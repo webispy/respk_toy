@@ -307,6 +307,9 @@ int ntoy_led_dbus_init(GDBusConnection *conn)
 	if (ntoy_led_open(1) < 0)
 		return -1;
 
+	ntoy_led_reset();
+	ntoy_led_update();
+
 	/* All LEDs */
 	_register_dbus_path(0, conn);
 

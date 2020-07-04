@@ -18,6 +18,8 @@ int ntoy_matrix_close(void);
 int ntoy_matrix_set_pixel(int row, int col, int value);
 int ntoy_matrix_set_row(int row, unsigned int value);
 
+int ntoy_matrix_set_brightness(int value);
+
 void ntoy_matrix_draw(void);
 void ntoy_matrix_clear(void);
 

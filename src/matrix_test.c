@@ -48,7 +48,7 @@ static void simple_set_pixel(void)
 	ntoy_matrix_draw();
 }
 
-static void simple_art(void)
+static void simple_art(int max_loop)
 {
 	int i;
 	int count;
@@ -70,7 +70,7 @@ static void simple_art(void)
 
 	ntoy_matrix_clear();
 
-	for (count = 1; count < 10000; count++) {
+	for (count = 1; count <= max_loop; count++) {
 		/* Draw */
 		for (i = 0; i < 8; i++)
 			ntoy_matrix_set_row(i, rows[i]);
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 	printf("Start\n");
 
 	if (ntoy_matrix_open() < 0) {
-		printf("matrix open fail\n");
+		printf("matrix open failed\n");
 		return -1;
 	}
 
@@ -216,8 +216,10 @@ int main(int argc, char *argv[])
 		} else if (argv[1][0] == '1') {
 			simple_xy_loop();
 		} else if (argv[1][0] == '2') {
-			simple_art();
+			simple_art(1);
 		} else if (argv[1][0] == '3') {
+			simple_art(10000);
+		} else if (argv[1][0] == '4') {
 			simple_vertical_bar();
 		}
 	}

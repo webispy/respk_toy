@@ -29,6 +29,9 @@
 	"      <arg type='y' name='col'/>"                                     \
 	"      <arg type='b' name='fill'/>"                                    \
 	"    </method>"                                                        \
+	"    <method name='Brightness'>"                                       \
+	"      <arg type='y' name='value'/>"                                   \
+	"    </method>"                                                        \
 	"  </interface>"                                                       \
 	"</node>"
 
@@ -184,17 +187,35 @@ int ntoy_matrix_set_row(int row, unsigned int value)
 	return 0;
 }
 
-void ntoy_matrix_draw(void)
+static void _matrix_draw(int force_draw)
 {
 	int i;
 
 	for (i = 0; i < NTOY_NUM_ROWS; i++) {
-		if (bitmap[i] == dirty[i])
-			continue;
+		if (force_draw == 0) {
+			if (bitmap[i] == dirty[i])
+				continue;
+		}
 
 		m_write(i, bitmap[i]);
 		dirty[i] = bitmap[i];
 	}
+}
+
+void ntoy_matrix_draw(void)
+{
+	_matrix_draw(0);
+}
+
+int ntoy_matrix_set_brightness(int value)
+{
+	if (value > NTOY_MATRIX_MAX_BRIGHTNESS ||
+	    value < NTOY_MATRIX_MIN_BRIGHTNESS)
+		return -1;
+
+	_setup_command(COMMAND_INTENSITY, value);
+
+	return 0;
 }
 
 void ntoy_matrix_clear(void)
@@ -203,6 +224,8 @@ void ntoy_matrix_clear(void)
 
 	for (i = 0; i < NTOY_NUM_ROWS; i++)
 		bitmap[i] = 0;
+
+	_matrix_draw(1);
 }
 
 static void _matrix_setup(void)
@@ -249,7 +272,6 @@ static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 
 	if (!g_strcmp0(method_name, "Clear")) {
 		ntoy_matrix_clear();
-		ntoy_matrix_draw();
 	} else if (!g_strcmp0(method_name, "SetPixel")) {
 		unsigned char row, col, fill;
 
@@ -258,6 +280,13 @@ static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 
 		ntoy_matrix_set_pixel(row, col, fill);
 		ntoy_matrix_draw();
+	} else if (!g_strcmp0(method_name, "Brightness")) {
+		unsigned char value;
+
+		g_variant_get(parameters, "(y)", &value);
+		printf("Brightness(%d)\n", value);
+
+		ntoy_matrix_set_brightness(value);
 	}
 
 	g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
@@ -298,8 +327,12 @@ static int _register_dbus_path(int matrix_id, GDBusConnection *conn)
 
 int ntoy_matrix_dbus_init(GDBusConnection *conn)
 {
-	if (ntoy_matrix_open() < 0)
+	if (ntoy_matrix_open() < 0) {
+		printf("matrix open failed\n");
 		return -1;
+	}
+
+	ntoy_matrix_clear();
 
 	/* All Matrix */
 	_register_dbus_path(0, conn);
