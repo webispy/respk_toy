@@ -14,7 +14,7 @@ static void simple_set_row(void)
 	ntoy_matrix_set_row(5, 0x00610006);
 	ntoy_matrix_set_row(6, 0x07ff00f7);
 	ntoy_matrix_set_row(7, 0x01010101);
-	ntoy_matrix_draw();
+	ntoy_matrix_update();
 }
 
 static void simple_set_pixel(void)
@@ -45,7 +45,7 @@ static void simple_set_pixel(void)
 	ntoy_matrix_set_pixel(7, 25, 1);
 	ntoy_matrix_set_pixel(7, 30, 1);
 
-	ntoy_matrix_draw();
+	ntoy_matrix_update();
 }
 
 static void simple_art(int max_loop)
@@ -54,10 +54,10 @@ static void simple_art(int max_loop)
 	int count;
 	int dir = 0;
 
-	unsigned int rows[8] = {
-		0x00000000, 0x7e423800, 0x4224446c, 0x5a180492,
-		0x5a181800, 0x42241044, 0x7e420038, 0x00001000
-	};
+	unsigned int rows[NTOY_MATRIX_NUM_ROWS] = { 0x00000000, 0x7e423800,
+						    0x4224446c, 0x5a180492,
+						    0x5a181800, 0x42241044,
+						    0x7e420038, 0x00001000 };
 	unsigned int first, last;
 
 	/**
@@ -75,13 +75,13 @@ static void simple_art(int max_loop)
 		for (i = 0; i < 8; i++)
 			ntoy_matrix_set_row(i, rows[i]);
 
-		ntoy_matrix_draw();
+		ntoy_matrix_update();
 		usleep(20 * 1000);
 
 		/* Rotate */
 		first = rows[0];
-		last = rows[7];
-		for (i = 0; i < 8; i++) {
+		last = rows[NTOY_MATRIX_NUM_ROWS - 1];
+		for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
 			if (dir == 0)
 				rows[i] = (rows[i] << 1) |
 					  ((rows[i] >> 31) & 0x01);
@@ -98,7 +98,7 @@ static void simple_art(int max_loop)
 		}
 
 		if (dir == 2)
-			rows[7] = first;
+			rows[NTOY_MATRIX_NUM_ROWS - 1] = first;
 		else if (dir == 3)
 			rows[0] = last;
 
@@ -117,7 +117,7 @@ static void _draw_bar(int index, int value)
 	int y;
 	int flag;
 
-	for (y = 0; y < NTOY_NUM_ROWS; y++) {
+	for (y = 0; y < NTOY_MATRIX_NUM_ROWS; y++) {
 		if (8 - value > y)
 			flag = 0;
 		else
@@ -135,23 +135,23 @@ static void _draw_bar(int index, int value)
 
 static void simple_vertical_bar(void)
 {
-	int bar[8] = { 3, 2, 1, 4, 5, 6, 7, 8 };
+	int bar[NTOY_MATRIX_NUM_ROWS] = { 3, 2, 1, 4, 5, 6, 7, 8 };
 	int i;
 	int count;
 
 	ntoy_matrix_clear();
 
 	for (count = 1; count < 10000; count++) {
-		for (i = 0; i < 8; i++)
+		for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++)
 			_draw_bar(i, bar[i]);
 
-		ntoy_matrix_draw();
+		ntoy_matrix_update();
 		usleep(50 * 1000);
 
-		for (i = 0; i < 8; i++) {
+		for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
 			bar[i] += (rand() % 3 - 1);
-			if (bar[i] > 8)
-				bar[i] = 8;
+			if (bar[i] > NTOY_MATRIX_NUM_ROWS)
+				bar[i] = NTOY_MATRIX_NUM_ROWS;
 			if (bar[i] < 0)
 				bar[i] = 0;
 		}
@@ -162,27 +162,76 @@ static void simple_xy_loop(void)
 {
 	int i, j;
 
-	for (i = 0; i < NTOY_NUM_ROWS; i++) {
-		for (j = 0; j < NTOY_NUM_COLS; j++) {
+	for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
+		for (j = 0; j < NTOY_MATRIX_NUM_COLS; j++) {
 			ntoy_matrix_set_pixel(i, j, 1);
-			ntoy_matrix_draw();
+			ntoy_matrix_update();
 			usleep(10 * 1000);
 			ntoy_matrix_set_pixel(i, j, 0);
-			ntoy_matrix_draw();
+			ntoy_matrix_update();
 			usleep(5 * 1000);
 		}
 	}
 
-	for (j = 0; j < NTOY_NUM_COLS; j++) {
-		for (i = 0; i < NTOY_NUM_ROWS; i++) {
+	for (j = 0; j < NTOY_MATRIX_NUM_COLS; j++) {
+		for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
 			ntoy_matrix_set_pixel(i, j, 1);
-			ntoy_matrix_draw();
+			ntoy_matrix_update();
 			usleep(10 * 1000);
 			ntoy_matrix_set_pixel(i, j, 0);
-			ntoy_matrix_draw();
+			ntoy_matrix_update();
 			usleep(5 * 1000);
 		}
 	}
+}
+
+static void simple_cairo(void)
+{
+	int i;
+	int count;
+	ntoy_matrix_clear();
+
+	ntoy_matrix_draw_open();
+
+	for (count = 0; count < 1000; count++) {
+		for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
+			ntoy_matrix_draw_line(0, 0, i, NTOY_MATRIX_NUM_COLS - 1,
+					      1);
+			ntoy_matrix_draw_line(0, NTOY_MATRIX_NUM_COLS - 1, i, 0,
+					      1);
+
+			ntoy_matrix_draw_flush();
+			ntoy_matrix_update();
+
+			usleep(100 * 1000);
+
+			ntoy_matrix_draw_line(0, 0, i, NTOY_MATRIX_NUM_COLS - 1,
+					      0);
+			ntoy_matrix_draw_line(0, NTOY_MATRIX_NUM_COLS - 1, i, 0,
+					      0);
+		}
+
+		for (i = 0; i < NTOY_MATRIX_NUM_COLS; i++) {
+			ntoy_matrix_draw_line(0, 0, NTOY_MATRIX_NUM_ROWS - 1,
+					      NTOY_MATRIX_NUM_COLS - i - 1, 1);
+
+			ntoy_matrix_draw_line(0, NTOY_MATRIX_NUM_COLS - 1,
+					      NTOY_MATRIX_NUM_ROWS - 1, i, 1);
+
+			ntoy_matrix_draw_flush();
+			ntoy_matrix_update();
+
+			usleep(100 * 1000);
+
+			ntoy_matrix_draw_line(0, 0, NTOY_MATRIX_NUM_ROWS - 1,
+					      NTOY_MATRIX_NUM_COLS - i - 1, 0);
+
+			ntoy_matrix_draw_line(0, NTOY_MATRIX_NUM_COLS - 1,
+					      NTOY_MATRIX_NUM_ROWS - 1, i, 0);
+		}
+	}
+
+	ntoy_matrix_draw_close();
 }
 
 static void next_key(void)
@@ -221,6 +270,8 @@ int main(int argc, char *argv[])
 			simple_art(10000);
 		} else if (argv[1][0] == '4') {
 			simple_vertical_bar();
+		} else if (argv[1][0] == '5') {
+			simple_cairo();
 		}
 	}
 

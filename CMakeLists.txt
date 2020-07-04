@@ -8,7 +8,7 @@ SET(NTOY_DBUS_SERVICE "n.toy")
 
 INCLUDE_DIRECTORIES(src)
 
-pkg_check_modules(pkgs REQUIRED glib-2.0 gio-2.0 gio-unix-2.0 gthread-2.0)
+pkg_check_modules(pkgs REQUIRED glib-2.0 gio-2.0 gio-unix-2.0 gthread-2.0 cairo)
 FOREACH(flag ${pkgs_CFLAGS})
 	ADD_COMPILE_OPTIONS(${flag})
 ENDFOREACH()

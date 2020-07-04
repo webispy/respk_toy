@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <cairo.h>
+
 #include "ntoy_spi.h"
 #include "ntoy_matrix.h"
 
@@ -90,8 +92,10 @@ enum command {
 	COMMAND_TEST_MODE = 0x0F
 };
 
-static unsigned int bitmap[NTOY_NUM_ROWS];
-static unsigned int dirty[NTOY_NUM_ROWS];
+static unsigned int bitmap[NTOY_MATRIX_NUM_ROWS];
+static unsigned int dirty[NTOY_MATRIX_NUM_ROWS];
+static cairo_surface_t *surface;
+static cairo_t *cr;
 
 static int _write_max7219(unsigned char *buf, size_t length)
 {
@@ -148,8 +152,8 @@ int ntoy_matrix_set_pixel(int row, int col, int value)
 	int mid;
 	int mask;
 
-	if (row < 0 || col < 0 || row > NTOY_NUM_ROWS - 1 ||
-	    col > NTOY_NUM_COLS - 1)
+	if (row < 0 || col < 0 || row > NTOY_MATRIX_NUM_ROWS - 1 ||
+	    col > NTOY_MATRIX_NUM_COLS - 1)
 		return -1;
 
 	mid = col / 8;
@@ -179,7 +183,7 @@ int ntoy_matrix_set_pixel(int row, int col, int value)
 
 int ntoy_matrix_set_row(int row, unsigned int value)
 {
-	if (row < 0 || row > NTOY_NUM_ROWS - 1)
+	if (row < 0 || row > NTOY_MATRIX_NUM_ROWS - 1)
 		return -1;
 
 	bitmap[row] = value;
@@ -187,11 +191,11 @@ int ntoy_matrix_set_row(int row, unsigned int value)
 	return 0;
 }
 
-static void _matrix_draw(int force_draw)
+static void _matrix_update(int force_draw)
 {
 	int i;
 
-	for (i = 0; i < NTOY_NUM_ROWS; i++) {
+	for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
 		if (force_draw == 0) {
 			if (bitmap[i] == dirty[i])
 				continue;
@@ -202,9 +206,9 @@ static void _matrix_draw(int force_draw)
 	}
 }
 
-void ntoy_matrix_draw(void)
+void ntoy_matrix_update(void)
 {
-	_matrix_draw(0);
+	_matrix_update(0);
 }
 
 int ntoy_matrix_set_brightness(int value)
@@ -222,10 +226,10 @@ void ntoy_matrix_clear(void)
 {
 	int i;
 
-	for (i = 0; i < NTOY_NUM_ROWS; i++)
+	for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++)
 		bitmap[i] = 0;
 
-	_matrix_draw(1);
+	_matrix_update(1);
 }
 
 static void _matrix_setup(void)
@@ -259,6 +263,105 @@ int ntoy_matrix_close(void)
 	return 0;
 }
 
+int ntoy_matrix_draw_open(void)
+{
+	if (surface || cr)
+		return -1;
+
+	surface = cairo_image_surface_create(
+		CAIRO_FORMAT_A8, NTOY_MATRIX_NUM_COLS, NTOY_MATRIX_NUM_ROWS);
+
+	printf("surface width: %d\n", cairo_image_surface_get_width(surface));
+	printf("surface height: %d\n", cairo_image_surface_get_height(surface));
+	printf("surface stride: %d\n", cairo_image_surface_get_stride(surface));
+
+	cr = cairo_create(surface);
+
+	/* clear */
+	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.0);
+	cairo_paint(cr);
+
+	/* settings */
+	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
+	cairo_set_line_width(cr, 1.0);
+
+	return 0;
+}
+
+int ntoy_matrix_draw_flush(void)
+{
+	unsigned char *ptr;
+	int i, j;
+
+	if (surface == NULL)
+		return -1;
+
+	ptr = cairo_image_surface_get_data(surface);
+	if (!ptr)
+		return -1;
+
+	for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
+		for (j = 0; j < NTOY_MATRIX_NUM_COLS; j++, ptr++) {
+			if (*ptr != 0)
+				ntoy_matrix_set_pixel(i, j, 1);
+			else
+				ntoy_matrix_set_pixel(i, j, 0);
+		}
+	}
+
+	return 0;
+}
+
+int ntoy_matrix_draw_close(void)
+{
+	if (surface == NULL || cr == NULL)
+		return -1;
+
+	cairo_destroy(cr);
+
+	ntoy_matrix_draw_flush();
+
+	cairo_surface_destroy(surface);
+
+	cr = NULL;
+	surface = NULL;
+
+	return 0;
+}
+
+int ntoy_matrix_draw_line(int y1, int x1, int y2, int x2, int value)
+{
+	if (cr == NULL)
+		return -1;
+
+	if (value == 0)
+		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.0);
+	else
+		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
+
+	printf("line (%d,%d) ~ (%d,%d)\n", y1, x1, y2, x2);
+
+	if (x2 > x1)
+		x2++;
+	else
+		x1++;
+
+	if (y2 > y1)
+		y2++;
+	else
+		y1++;
+
+	printf(" =>  (%d,%d) ~ (%d,%d)\n", y1, x1, y2, x2);
+
+	cairo_move_to(cr, x1, y1);
+
+	cairo_line_to(cr, x2, y2);
+	cairo_stroke(cr);
+
+	return 0;
+}
+
 static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 			      const gchar *object_path,
 			      const gchar *interface_name,
@@ -266,9 +369,7 @@ static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 			      GDBusMethodInvocation *invocation,
 			      gpointer user_data)
 {
-	int matrix_id = GPOINTER_TO_INT(user_data);
-	printf("method: '%s' from '%s' (Matrix %d)\n", method_name, sender,
-	       matrix_id);
+	printf("method: '%s' from '%s'\n", method_name, sender);
 
 	if (!g_strcmp0(method_name, "Clear")) {
 		ntoy_matrix_clear();
@@ -279,7 +380,7 @@ static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 		printf("SetPixel: row=%d, col=%d, fill=%d\n", row, col, fill);
 
 		ntoy_matrix_set_pixel(row, col, fill);
-		ntoy_matrix_draw();
+		ntoy_matrix_update();
 	} else if (!g_strcmp0(method_name, "Brightness")) {
 		unsigned char value;
 
@@ -299,11 +400,10 @@ static GDBusInterfaceVTable ops = {
 	.set_property = NULL
 };
 
-static int _register_dbus_path(int matrix_id, GDBusConnection *conn)
+static int _register_dbus_path(GDBusConnection *conn)
 {
 	GDBusNodeInfo *intro;
 	GError *e = NULL;
-	char buf[255];
 
 	intro = g_dbus_node_info_new_for_xml(DBUS_INTROSPECTION, &e);
 	if (!intro) {
@@ -313,16 +413,9 @@ static int _register_dbus_path(int matrix_id, GDBusConnection *conn)
 		return -1;
 	}
 
-	if (matrix_id == 0)
-		snprintf(buf, sizeof(buf), DBUS_OBJECT_PATH);
-	else
-		snprintf(buf, sizeof(buf), DBUS_OBJECT_PATH "/%d",
-			 matrix_id - 1);
-
-	return g_dbus_connection_register_object(conn, buf,
+	return g_dbus_connection_register_object(conn, DBUS_OBJECT_PATH,
 						 intro->interfaces[0], &ops,
-						 GINT_TO_POINTER(matrix_id),
-						 NULL, &e);
+						 NULL, NULL, &e);
 }
 
 int ntoy_matrix_dbus_init(GDBusConnection *conn)
@@ -335,21 +428,7 @@ int ntoy_matrix_dbus_init(GDBusConnection *conn)
 	ntoy_matrix_clear();
 
 	/* All Matrix */
-	_register_dbus_path(0, conn);
-
-#if 0
-	/* Matrix-0 */
-	_register_dbus_path(1, conn);
-
-	/* Matrix-1 */
-	_register_dbus_path(2, conn);
-
-	/* Matrix-2 */
-	_register_dbus_path(3, conn);
-
-	/* Matrix-3 */
-	_register_dbus_path(4, conn);
-#endif
+	_register_dbus_path(conn);
 
 	return 0;
 }
