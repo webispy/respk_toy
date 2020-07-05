@@ -5,47 +5,47 @@
 
 static void simple_set_row(void)
 {
-	ntoy_matrix_clear();
-	ntoy_matrix_set_row(0, 0x00000001);
-	ntoy_matrix_set_row(1, 0x00000022);
-	ntoy_matrix_set_row(2, 0x10000303);
-	ntoy_matrix_set_row(3, 0x01004004);
-	ntoy_matrix_set_row(4, 0x00150005);
-	ntoy_matrix_set_row(5, 0x00610006);
-	ntoy_matrix_set_row(6, 0x07ff00f7);
-	ntoy_matrix_set_row(7, 0x01010101);
-	ntoy_matrix_update();
+	ntoy_matrix_raw_clear();
+	ntoy_matrix_raw_set_row(0, 0x00000001);
+	ntoy_matrix_raw_set_row(1, 0x00000022);
+	ntoy_matrix_raw_set_row(2, 0x10000303);
+	ntoy_matrix_raw_set_row(3, 0x01004004);
+	ntoy_matrix_raw_set_row(4, 0x00150005);
+	ntoy_matrix_raw_set_row(5, 0x00610006);
+	ntoy_matrix_raw_set_row(6, 0x07ff00f7);
+	ntoy_matrix_raw_set_row(7, 0x01010101);
+	ntoy_matrix_raw_update();
 }
 
 static void simple_set_pixel(void)
 {
-	ntoy_matrix_clear();
+	ntoy_matrix_raw_clear();
 
-	ntoy_matrix_set_pixel(0, 0, 1);
-	ntoy_matrix_set_pixel(0, 7, 1);
+	ntoy_matrix_raw_set_pixel(0, 0, 1);
+	ntoy_matrix_raw_set_pixel(0, 7, 1);
 
-	ntoy_matrix_set_pixel(1, 8, 1);
-	ntoy_matrix_set_pixel(1, 15, 1);
+	ntoy_matrix_raw_set_pixel(1, 8, 1);
+	ntoy_matrix_raw_set_pixel(1, 15, 1);
 
-	ntoy_matrix_set_pixel(2, 16, 1);
-	ntoy_matrix_set_pixel(2, 23, 1);
+	ntoy_matrix_raw_set_pixel(2, 16, 1);
+	ntoy_matrix_raw_set_pixel(2, 23, 1);
 
-	ntoy_matrix_set_pixel(3, 24, 1);
-	ntoy_matrix_set_pixel(3, 31, 1);
+	ntoy_matrix_raw_set_pixel(3, 24, 1);
+	ntoy_matrix_raw_set_pixel(3, 31, 1);
 
-	ntoy_matrix_set_pixel(4, 1, 1);
-	ntoy_matrix_set_pixel(4, 6, 1);
+	ntoy_matrix_raw_set_pixel(4, 1, 1);
+	ntoy_matrix_raw_set_pixel(4, 6, 1);
 
-	ntoy_matrix_set_pixel(5, 9, 1);
-	ntoy_matrix_set_pixel(5, 14, 1);
+	ntoy_matrix_raw_set_pixel(5, 9, 1);
+	ntoy_matrix_raw_set_pixel(5, 14, 1);
 
-	ntoy_matrix_set_pixel(6, 17, 1);
-	ntoy_matrix_set_pixel(6, 22, 1);
+	ntoy_matrix_raw_set_pixel(6, 17, 1);
+	ntoy_matrix_raw_set_pixel(6, 22, 1);
 
-	ntoy_matrix_set_pixel(7, 25, 1);
-	ntoy_matrix_set_pixel(7, 30, 1);
+	ntoy_matrix_raw_set_pixel(7, 25, 1);
+	ntoy_matrix_raw_set_pixel(7, 30, 1);
 
-	ntoy_matrix_update();
+	ntoy_matrix_raw_update();
 }
 
 static void simple_art(int max_loop)
@@ -68,14 +68,14 @@ static void simple_art(int max_loop)
 	 *  - Endian: big endian
 	 */
 
-	ntoy_matrix_clear();
+	ntoy_matrix_raw_clear();
 
 	for (count = 1; count <= max_loop; count++) {
 		/* Draw */
 		for (i = 0; i < 8; i++)
-			ntoy_matrix_set_row(i, rows[i]);
+			ntoy_matrix_raw_set_row(i, rows[i]);
 
-		ntoy_matrix_update();
+		ntoy_matrix_raw_update();
 		usleep(20 * 1000);
 
 		/* Rotate */
@@ -124,12 +124,12 @@ static void _draw_bar(int index, int value)
 			flag = 1;
 
 		/* width: 3 */
-		ntoy_matrix_set_pixel(y, index * 4, flag);
-		ntoy_matrix_set_pixel(y, index * 4 + 1, flag);
-		ntoy_matrix_set_pixel(y, index * 4 + 2, flag);
+		ntoy_matrix_raw_set_pixel(y, index * 4, flag);
+		ntoy_matrix_raw_set_pixel(y, index * 4 + 1, flag);
+		ntoy_matrix_raw_set_pixel(y, index * 4 + 2, flag);
 
 		/* space */
-		ntoy_matrix_set_pixel(y, index * 4 + 3, 0);
+		ntoy_matrix_raw_set_pixel(y, index * 4 + 3, 0);
 	}
 }
 
@@ -139,13 +139,13 @@ static void simple_vertical_bar(void)
 	int i;
 	int count;
 
-	ntoy_matrix_clear();
+	ntoy_matrix_raw_clear();
 
 	for (count = 1; count < 10000; count++) {
 		for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++)
 			_draw_bar(i, bar[i]);
 
-		ntoy_matrix_update();
+		ntoy_matrix_raw_update();
 		usleep(50 * 1000);
 
 		for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
@@ -164,22 +164,22 @@ static void simple_xy_loop(void)
 
 	for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
 		for (j = 0; j < NTOY_MATRIX_NUM_COLS; j++) {
-			ntoy_matrix_set_pixel(i, j, 1);
-			ntoy_matrix_update();
+			ntoy_matrix_raw_set_pixel(i, j, 1);
+			ntoy_matrix_raw_update();
 			usleep(10 * 1000);
-			ntoy_matrix_set_pixel(i, j, 0);
-			ntoy_matrix_update();
+			ntoy_matrix_raw_set_pixel(i, j, 0);
+			ntoy_matrix_raw_update();
 			usleep(5 * 1000);
 		}
 	}
 
 	for (j = 0; j < NTOY_MATRIX_NUM_COLS; j++) {
 		for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
-			ntoy_matrix_set_pixel(i, j, 1);
-			ntoy_matrix_update();
+			ntoy_matrix_raw_set_pixel(i, j, 1);
+			ntoy_matrix_raw_update();
 			usleep(10 * 1000);
-			ntoy_matrix_set_pixel(i, j, 0);
-			ntoy_matrix_update();
+			ntoy_matrix_raw_set_pixel(i, j, 0);
+			ntoy_matrix_raw_update();
 			usleep(5 * 1000);
 		}
 	}
@@ -191,16 +191,13 @@ static void simple_cairo(void)
 	int count = 0;
 	char buf[10] = "0";
 
-	ntoy_matrix_clear();
-
-	ntoy_matrix_draw_open();
-
+	ntoy_matrix_draw_fill(0);
+	ntoy_matrix_draw_flush();
 
 	for (; count < 1000; count++) {
 		ntoy_matrix_draw_text(8, 5, buf, 0);
 
 		snprintf(buf, 5, "%04d", count);
-
 
 		for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
 			ntoy_matrix_draw_text(8, 5, buf, 1);
@@ -210,7 +207,6 @@ static void simple_cairo(void)
 					      1);
 
 			ntoy_matrix_draw_flush();
-			ntoy_matrix_update();
 
 			usleep(50 * 1000);
 
@@ -229,7 +225,6 @@ static void simple_cairo(void)
 					      NTOY_MATRIX_NUM_ROWS - 1, i, 1);
 
 			ntoy_matrix_draw_flush();
-			ntoy_matrix_update();
 
 			usleep(50 * 1000);
 
@@ -240,9 +235,6 @@ static void simple_cairo(void)
 					      NTOY_MATRIX_NUM_ROWS - 1, i, 0);
 		}
 	}
-
-	ntoy_matrix_draw_close();
-	ntoy_matrix_update();
 
 	sleep(100);
 }

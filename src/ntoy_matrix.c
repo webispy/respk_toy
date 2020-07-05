@@ -26,13 +26,19 @@
 	"  <interface name='" DBUS_INTERFACE_NAME "'>"                         \
 	"    <method name='Clear'>"                                            \
 	"    </method>"                                                        \
-	"    <method name='SetPixel'>"                                         \
+	"    <method name='Pixel'>"                                            \
 	"      <arg type='y' name='row'/>"                                     \
 	"      <arg type='y' name='col'/>"                                     \
 	"      <arg type='b' name='fill'/>"                                    \
 	"    </method>"                                                        \
 	"    <method name='Brightness'>"                                       \
 	"      <arg type='y' name='value'/>"                                   \
+	"    </method>"                                                        \
+	"    <method name='Text'>"                                             \
+	"      <arg type='y' name='row'/>"                                     \
+	"      <arg type='y' name='col'/>"                                     \
+	"      <arg type='s' name='str'/>"                                     \
+	"      <arg type='b' name='fill'/>"                                    \
 	"    </method>"                                                        \
 	"  </interface>"                                                       \
 	"</node>"
@@ -147,7 +153,22 @@ static int m_write(int row, unsigned int cols_value)
 	return 0;
 }
 
-int ntoy_matrix_set_pixel(int row, int col, int value)
+static void _matrix_update(int force_draw)
+{
+	int i;
+
+	for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
+		if (force_draw == 0) {
+			if (bitmap[i] == dirty[i])
+				continue;
+		}
+
+		m_write(i, bitmap[i]);
+		dirty[i] = bitmap[i];
+	}
+}
+
+int ntoy_matrix_raw_set_pixel(int row, int col, int value)
 {
 	int mid;
 	int mask;
@@ -181,7 +202,7 @@ int ntoy_matrix_set_pixel(int row, int col, int value)
 	return 0;
 }
 
-int ntoy_matrix_set_row(int row, unsigned int value)
+int ntoy_matrix_raw_set_row(int row, unsigned int value)
 {
 	if (row < 0 || row > NTOY_MATRIX_NUM_ROWS - 1)
 		return -1;
@@ -191,38 +212,12 @@ int ntoy_matrix_set_row(int row, unsigned int value)
 	return 0;
 }
 
-static void _matrix_update(int force_draw)
-{
-	int i;
-
-	for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
-		if (force_draw == 0) {
-			if (bitmap[i] == dirty[i])
-				continue;
-		}
-
-		m_write(i, bitmap[i]);
-		dirty[i] = bitmap[i];
-	}
-}
-
-void ntoy_matrix_update(void)
+void ntoy_matrix_raw_update(void)
 {
 	_matrix_update(0);
 }
 
-int ntoy_matrix_set_brightness(int value)
-{
-	if (value > NTOY_MATRIX_MAX_BRIGHTNESS ||
-	    value < NTOY_MATRIX_MIN_BRIGHTNESS)
-		return -1;
-
-	_setup_command(COMMAND_INTENSITY, value);
-
-	return 0;
-}
-
-void ntoy_matrix_clear(void)
+void ntoy_matrix_raw_clear(void)
 {
 	int i;
 
@@ -241,6 +236,17 @@ static void _matrix_setup(void)
 	_setup_command(COMMAND_TEST_MODE, 0x0);
 }
 
+int ntoy_matrix_set_brightness(int value)
+{
+	if (value > NTOY_MATRIX_MAX_BRIGHTNESS ||
+	    value < NTOY_MATRIX_MIN_BRIGHTNESS)
+		return -1;
+
+	_setup_command(COMMAND_INTENSITY, value);
+
+	return 0;
+}
+
 int ntoy_matrix_open(void)
 {
 	/**
@@ -253,11 +259,14 @@ int ntoy_matrix_open(void)
 
 	_matrix_setup();
 
+	ntoy_matrix_draw_open();
+
 	return 0;
 }
 
 int ntoy_matrix_close(void)
 {
+	ntoy_matrix_draw_close();
 	ntoy_spi_close(0);
 
 	return 0;
@@ -309,11 +318,13 @@ int ntoy_matrix_draw_flush(void)
 	for (i = 0; i < NTOY_MATRIX_NUM_ROWS; i++) {
 		for (j = 0; j < NTOY_MATRIX_NUM_COLS; j++, ptr++) {
 			if (*ptr != 0)
-				ntoy_matrix_set_pixel(i, j, 1);
+				ntoy_matrix_raw_set_pixel(i, j, 1);
 			else
-				ntoy_matrix_set_pixel(i, j, 0);
+				ntoy_matrix_raw_set_pixel(i, j, 0);
 		}
 	}
+
+	ntoy_matrix_raw_update();
 
 	return 0;
 }
@@ -335,6 +346,21 @@ int ntoy_matrix_draw_close(void)
 	return 0;
 }
 
+int ntoy_matrix_draw_fill(int value)
+{
+	if (cr == NULL)
+		return -1;
+
+	if (value == 0)
+		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.0);
+	else
+		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
+
+	cairo_paint(cr);
+
+	return 0;
+}
+
 int ntoy_matrix_draw_text(int y, int x, const char *text, int value)
 {
 	if (cr == NULL)
@@ -345,8 +371,24 @@ int ntoy_matrix_draw_text(int y, int x, const char *text, int value)
 	else
 		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
 
-	cairo_move_to(cr, x,y);
+	cairo_move_to(cr, x, y);
 	cairo_show_text(cr, text);
+
+	return 0;
+}
+
+int ntoy_matrix_draw_pixel(int y, int x, int value)
+{
+	if (cr == NULL)
+		return -1;
+
+	if (value == 0)
+		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.0);
+	else
+		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
+
+	cairo_rectangle(cr, x, y, 1.0, 1.0);
+	cairo_fill(cr);
 
 	return 0;
 }
@@ -390,18 +432,21 @@ static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 			      GDBusMethodInvocation *invocation,
 			      gpointer user_data)
 {
-	printf("method: '%s' from '%s'\n", method_name, sender);
+	printf("method: '%s'(%s) from '%s'\n", method_name,
+	       g_variant_get_type_string(parameters), sender);
 
 	if (!g_strcmp0(method_name, "Clear")) {
-		ntoy_matrix_clear();
-	} else if (!g_strcmp0(method_name, "SetPixel")) {
-		unsigned char row, col, fill;
+		ntoy_matrix_draw_fill(0);
+		ntoy_matrix_draw_flush();
+	} else if (!g_strcmp0(method_name, "Pixel")) {
+		unsigned char row, col;
+		int fill;
 
 		g_variant_get(parameters, "(yyb)", &row, &col, &fill);
-		printf("SetPixel: row=%d, col=%d, fill=%d\n", row, col, fill);
+		printf("Pixel: row=%d, col=%d, fill=%d\n", row, col, fill);
 
-		ntoy_matrix_set_pixel(row, col, fill);
-		ntoy_matrix_update();
+		ntoy_matrix_draw_pixel(row, col, fill);
+		ntoy_matrix_draw_flush();
 	} else if (!g_strcmp0(method_name, "Brightness")) {
 		unsigned char value;
 
@@ -409,6 +454,16 @@ static void _dbus_method_call(GDBusConnection *connection, const gchar *sender,
 		printf("Brightness(%d)\n", value);
 
 		ntoy_matrix_set_brightness(value);
+	} else if (!g_strcmp0(method_name, "Text")) {
+		unsigned char row, col;
+		int fill;
+		char *str = NULL;
+
+		g_variant_get(parameters, "(yy&sb)", &row, &col, &str, &fill);
+		printf("Text: row=%d, col=%d, text=%s, fill=%d\n", row, col,
+		       str, fill);
+		ntoy_matrix_draw_text(row, col, str, fill);
+		ntoy_matrix_draw_flush();
 	}
 
 	g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
@@ -446,7 +501,7 @@ int ntoy_matrix_dbus_init(GDBusConnection *conn)
 		return -1;
 	}
 
-	ntoy_matrix_clear();
+	ntoy_matrix_raw_clear();
 
 	/* All Matrix */
 	_register_dbus_path(conn);
